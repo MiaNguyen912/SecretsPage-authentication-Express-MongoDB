@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
 
 const app = express();
 
@@ -10,16 +12,28 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+//----------------------
 
+//connect to database
 mongoose.connect("mongodb://localhost:27017/userDB");
 
-const userSchema = ({
+// const userSchema = new { 
+//   email: String,
+//   password: String
+// };
+
+const userSchema = new mongoose.Schema({
   email: String,
   password: String
 });
 
+userSchema.plugin(encrypt, { secret: process.env.SECRET_STRING, encryptedFields: ['password'] });  //plugin the secret string into schema
+
 const User = new mongoose.model("User", userSchema);
 
+//----------------------
+
+//APIs
 app.get("/", function(req, res){
   res.render("home");
 });
@@ -49,7 +63,6 @@ app.post("/login", async(req, res)=>{
   const password = req.body.password;
   try{
     const foundUser = await User.findOne({email: username})
-    console.log(foundUser)
     if(foundUser) {
       if (foundUser.password === password){
         res.render("secrets");
@@ -60,11 +73,6 @@ app.post("/login", async(req, res)=>{
       res.send("Username does not exist.")
     }
   } catch(err){console.log(err)}
-
-
-
-
-  
 });
 
 
@@ -72,7 +80,9 @@ app.post("/login", async(req, res)=>{
 
 
 
+//----------------------
 
+//host on local port
 app.listen(3000, function() {
   console.log("Server started on port 3000.");
 });

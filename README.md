@@ -14,10 +14,10 @@ you can use git log to see all the commits:
         Level 2 - Encryption
         
 
-        Level 1 - Username and Password Only
-        commit b15d5f8b03285ef45f3cae311b6469f8a894cc3d
+        Level 1 - Store username and password into mongoDB to check
+        commit 7ca8f8b04e958c5841cdca3ec8d9604d17293a5a
 
 To see the code after Level 1, simply type this into the terminal:
-        git checkout b15d5f8b03285ef45f3cae311b6469f8a894cc3d .
+        git checkout 7ca8f8b04e958c5841cdca3ec8d9604d17293a5a .
 
 
