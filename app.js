@@ -37,7 +37,8 @@ mongoose.connect("mongodb://localhost:27017/userDB");
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
-  googleId: String  //add this field to schema
+  googleId: String,  //add this field to schema
+  facebookId: String
 });
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
@@ -144,6 +145,13 @@ app.get("/secrets", (req, res) =>{
   else res.redirect("/login");
 })
 
+app.get("/submit", (req, res)=>{
+  if(req.isAuthenticated()) {
+    res.render("submit")
+  }
+  else res.redirect("/login");
+})
+
 app.get("/logout", (req, res)=>{
   req.logout((err)=>{
     if(err) return next(err)
@@ -181,9 +189,12 @@ app.post("/login", async(req, res)=>{
       })
     }
   })
-
 });
 
+app.post("/submit", (req, res)=>{
+  const submittedSecret = req.body.secret;
+  console.log(req.user) //when we initiate a login session, passport saves the user detail written in database
+})
 
 
 
