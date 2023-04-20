@@ -3,10 +3,12 @@
 
         Level 6 - Google OAuth 2.0 Authentication
         
-        Level 5 - Cookies and Sessions
+        Level 5 - Cookies and Sessions, salting & hashing automatically with passort-local-mongoose
+        
         
         Level 4 - Hashing and Salting with bcrypt
-        
+        commit b63fa316a104fc148a0979c182fe8287c790ef23
+
         Level 3 - Hashing with md5
         commit cc17d144d9db3c0dce3b02054f880f604183871b
 
