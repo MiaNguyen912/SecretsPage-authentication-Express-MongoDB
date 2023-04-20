@@ -1,10 +1,10 @@
 # Authentication-Secrets
 6 levels of authentication:
 
-        Level 6 - Google OAuth 2.0 Authentication
+        Level 6 - Add Google OAuth 2.0 Authentication to level 5
         
         Level 5 - Cookies and Sessions, salting & hashing automatically with passort-local-mongoose
-        
+        commit f12892bbb65dc972f36bed124d0f2111f816b932
         
         Level 4 - Hashing and Salting with bcrypt
         commit b63fa316a104fc148a0979c182fe8287c790ef23

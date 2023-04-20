@@ -10,7 +10,8 @@ const mongoose = require("mongoose");
 const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose'); 
-
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require('mongoose-findorcreate');
 
 const app = express();
 //---------------------
@@ -36,9 +37,11 @@ mongoose.connect("mongodb://localhost:27017/userDB");
 
 const userSchema = new mongoose.Schema({
   email: String,
-  password: String
+  password: String,
+  googleId: String  //add this field to schema
 });
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 // plugin the secret string into schema (level 2)
 // userSchema.plugin(encrypt, { secret: process.env.SECRET_STRING, encryptedFields: ['password'] });  
@@ -46,16 +49,62 @@ userSchema.plugin(passportLocalMongoose);
 const User = new mongoose.model("User", userSchema);
 passport.use(User.createStrategy());
 
-passport.serializeUser(User.serializeUser()); //serialize and deserialize are only useful while we use session
-                                              //serialize creates a cookie to store users identifications
-passport.deserializeUser(User.deserializeUser()); //deserialize allows passport to discover the message inside cookie to see users identifications
+// passport.serializeUser(User.serializeUser()); //serialize and deserialize are only useful while we use session
+//                                               //serialize creates a cookie to store users identifications
+// passport.deserializeUser(User.deserializeUser()); //deserialize allows passport to discover the message inside cookie to see users identifications
 
+passport.serializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+      picture: user.picture
+    });
+  });
+});
+
+passport.deserializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, user);
+  });
+});
+
+
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  callbackURL: "http://localhost:3000/auth/google/secrets", //Authorized redirect URIs
+  userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo" //this line fix Google+ deprecation
+},
+function(accessToken, refreshToken, profile, cb) {
+  // console.log(profile)  //to see the id
+
+  //find or create new record in database based off the 'googleID' field
+  //thus, we need to add the 'googleID' field into out mongoose Schema
+  //(originally we only have the 'username', 'password' field)
+  User.findOrCreate({ googleId: profile.id }, function (err, user) {  
+    return cb(err, user);
+  });
+}
+));
 
 //----------------------
 
 //APIs
 app.get("/", function(req, res){
   res.render("home");
+});
+
+app.get("/auth/google",
+  passport.authenticate("google", { scope: ['profile'] }) //use passport to authenticatie users on google's server
+  //this line will bring a pop up for users to sign in into their google account and will get their 'profile'
+)
+
+app.get('/auth/google/secrets',  //Authorized redirect URIs
+  passport.authenticate('google', { failureRedirect: '/login' }), //authenticate locally and save their login session
+  function(req, res) {
+    res.redirect('/secrets');     // Successful authentication, redirect to secrets page.
 });
 
 app.get("/login", function(req, res){
@@ -82,9 +131,9 @@ app.get("/logout", (req, res)=>{
 
 app.post("/register", async (req, res)=>{
   try{
-    //create user date
-    const activeUser = await User.register({username:req.body.username}, req.body.password);
-    //activeUser will be a record written in database (an obj containing _id, username, salt, hash)
+    //create user data
+    const registeredUser = await User.register({username:req.body.username}, req.body.password);
+    //registeredUser will be a record written in database (an obj containing _id, username, salt, hash)
 
     passport.authenticate("local")(req, res, ()=> {  //give authentication until session ends (when we close tab or browser)
       res.redirect("/secrets")
