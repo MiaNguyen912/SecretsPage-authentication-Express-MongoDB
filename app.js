@@ -4,7 +4,10 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 // const encrypt = require("mongoose-encryption"); //level 2 
-const md5 = require("md5"); //level 3
+// const md5 = require("md5"); //level 3
+const bcrypt = require("bcrypt"); //level 4
+const { truncate } = require('fs');
+const saltRounds = 10; //level 4
 
 const app = express();
 
@@ -49,30 +52,38 @@ app.get("/register", function(req, res){
 });
 
 app.post("/register", async(req, res)=>{
-  const newUser =  new User({
-    // email: req.body.username,
-    // password: req.body.password
-    email: req.body.username,
-    password: md5(req.body.password) //change password into an irreversible string using md5 hash
-  });
-  try{
-    await newUser.save();
-    res.render("secrets");
-  } catch(err){console.log(err);}
+
+  bcrypt.hash(req.body.password, saltRounds).then( async(hash) => { //level 4
+    const newUser =  new User({
+      email: req.body.username,
+      password: hash
+      // password: req.body.password
+      // password: md5(req.body.password) //level 3: change password into an irreversible string using md5 hash
+    });
+    try{
+      await newUser.save();
+      res.render("secrets");
+    } catch(err){console.log(err);}  });
 
 });
 
 app.post("/login", async(req, res)=>{
   const username = req.body.username;
-  const password = md5(req.body.password);  //change is into the md5 string and compared with stored md5 string in database
+  const password = req.body.password;  
+
+  // const password = md5(req.body.password);  //level 3: change is into the md5 string and compared with stored md5 string in database
   try{
     const foundUser = await User.findOne({email: username})
     if(foundUser) {
-      if (foundUser.password === password){
-        res.render("secrets");
-      } else {
-        res.send("Incorrect password");
-      }
+      bcrypt.compare(password, foundUser.password).then(function(result) {
+        if (result === true) res.render("secrets");
+        else res.send("Incorrect password");
+
+      });
+
+      // if (foundUser.password === password) res.render("secrets");
+      // else res.send("Incorrect password");
+
     } else {
       res.send("Username does not exist.")
     }
