@@ -36,6 +36,7 @@ mongoose.connect("mongodb://localhost:27017/userDB");
 
 const userSchema = new mongoose.Schema({
   email: String,
+  username: String,
   password: String,
   googleId: String,  //add this field to schema
   facebookId: String,
@@ -80,7 +81,7 @@ passport.use(new GoogleStrategy({
     //find or create new record in database based off the 'googleID' field
     //thus, we need to add the 'googleID' field into out mongoose Schema
     //(originally we only have the 'username', 'password' field)
-    User.findOrCreate({ googleId: profile.id }, function (err, user) {  
+    User.findOrCreate({username: profile.displayName, googleId: profile.id }, function (err, user) { 
       return cb(err, user);
     });
   }
@@ -93,7 +94,7 @@ passport.use(new FacebookStrategy({
   },
   function(accessToken, refreshToken, profile, cb) {
     // console.log(profile)
-    User.findOrCreate({ facebookId: profile.id }, function (err, user) {
+    User.findOrCreate({username: profile.displayName, facebookId: profile.id }, function (err, user) {
       return cb(err, user);
     });
   }
