@@ -38,7 +38,8 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   googleId: String,  //add this field to schema
-  facebookId: String
+  facebookId: String,
+  secret: String
 });
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
@@ -139,10 +140,13 @@ app.get("/register", function(req, res){
 });
 
 app.get("/secrets", (req, res) =>{
-  if(req.isAuthenticated()) {
-    res.render("secrets")
-  }
-  else res.redirect("/login");
+  // if(req.isAuthenticated()) {
+  //   res.render("secrets")
+  // }
+  // else res.redirect("/login");
+  User.find({"secret": {$ne: null}}).then((foundUsers)=>{ //not equal to null
+    if(foundUsers) res.render("secrets", {usersWithSecrets: foundUsers})
+  })  
 })
 
 app.get("/submit", (req, res)=>{
@@ -193,7 +197,14 @@ app.post("/login", async(req, res)=>{
 
 app.post("/submit", (req, res)=>{
   const submittedSecret = req.body.secret;
-  console.log(req.user) //when we initiate a login session, passport saves the user detail written in database
+  // console.log(req.user) //when we initiate a login session, passport saves the user detail written in database
+  User.findById(req.user.id).then((foundUser)=>{
+    if(foundUser) foundUser.secret = submittedSecret;
+    foundUser.save().then(()=>{
+      res.redirect("/secrets");
+    })
+  })
+
 })
 
 
